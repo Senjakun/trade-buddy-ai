@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { BrandingProvider } from "@/contexts/BrandingContext";
 import { OllamaProvider } from "@/contexts/OllamaContext";
+import { MarketModeProvider } from "@/contexts/MarketModeContext";
 import Index from "./pages/Index";
 import AdminDashboard from "./pages/AdminDashboard";
 import NotFound from "./pages/NotFound";
@@ -16,15 +17,17 @@ const App = () => (
     <TooltipProvider>
       <BrandingProvider>
         <OllamaProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/admin-rimba" element={<AdminDashboard />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
+          <MarketModeProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/admin-rimba" element={<AdminDashboard />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </BrowserRouter>
+          </MarketModeProvider>
         </OllamaProvider>
       </BrandingProvider>
     </TooltipProvider>

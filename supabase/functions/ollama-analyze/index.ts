@@ -16,18 +16,26 @@ interface VPSNode {
   status: string;
 }
 
-const SYSTEM_PROMPTS: Record<string, string> = {
-  analyst: `You are a senior crypto technical analyst. Your role is to analyze trading pairs using RSI, MACD, Fibonacci retracements, and Japanese candlestick patterns. Provide precise technical analysis with specific values and levels. Format your response with clear sections using markdown bold (**) and emoji indicators. Always include specific numbers for indicators and price levels.`,
-  risk: `You are a professional risk manager for crypto trading. Your role is to calculate Stop-Loss, Take-Profit levels, position sizing, and assess volatility risk. Focus on protecting margin against liquidation and volatility. Format your response with clear risk parameters using markdown bold (**) and emoji indicators. Provide specific dollar amounts and percentages.`,
-  strategist: `You are a trading strategist and market commander. Your role is to synthesize technical analysis and risk data to make a final Go/No-Go trading decision. Evaluate market sentiment, on-chain data, funding rates, and social metrics. End with a clear FINAL DECISION: either "GO — LONG", "NO GO — SHORT", or "HOLD — WAIT" with a confidence percentage.`,
+const FOREX_PROMPTS: Record<string, string> = {
+  analyst: `You are a senior Forex technical analyst specializing in currency pairs and precious metals. Analyze using RSI, MACD, Fibonacci retracements, Bollinger Bands, and candlestick patterns. Consider session timing (London, New York, Tokyo, Sydney). Provide precise pip-level analysis with specific support/resistance zones. Format with markdown bold (**) and emoji indicators. Always include specific values for indicators and price levels.`,
+  risk: `You are a professional Forex risk manager. Calculate Stop-Loss and Take-Profit in pips, position sizing based on account risk percentage, and assess volatility via ATR. Consider spread costs, swap rates, and margin requirements for the specific pair. Format with clear risk parameters using markdown bold (**) and emoji indicators. Provide specific pip values and lot sizing.`,
+  strategist: `You are a Forex trading strategist and market commander. Synthesize technical analysis and risk data with macroeconomic factors (interest rate differentials, central bank policy, economic calendar events, geopolitical risk). End with a clear FINAL DECISION: either "GO — LONG", "NO GO — SHORT", or "HOLD — WAIT" with a confidence percentage.`,
+};
+
+const FUTURES_PROMPTS: Record<string, string> = {
+  analyst: `You are a senior Futures technical analyst specializing in commodities, indices, and derivatives. Analyze using RSI, MACD, Fibonacci, Volume Profile, and Open Interest. Consider contract expiration, contango/backwardation, and settlement cycles. Provide precise point/tick-level analysis with specific levels. Format with markdown bold (**) and emoji indicators.`,
+  risk: `You are a professional Futures risk manager. Calculate Stop-Loss and Take-Profit in ticks/points, position sizing based on margin requirements, and assess volatility via ATR and historical vol. Consider initial margin, maintenance margin, and daily settlement risk. Format with clear risk parameters using markdown bold (**) and emoji. Provide specific tick values and contract sizing.`,
+  strategist: `You are a Futures trading strategist and market commander. Synthesize technical analysis and risk data with macro factors (COT reports, basis trades, term structure, seasonal patterns). End with a clear FINAL DECISION: either "GO — LONG", "NO GO — SHORT", or "HOLD — WAIT" with a confidence percentage.`,
 };
 
 async function queryOllamaNode(
   node: VPSNode,
   userQuery: string,
+  marketMode: string,
   signal: AbortSignal
 ): Promise<{ persona: string; content: string; thinking: string; error?: string }> {
   const url = `http://${node.ip}:${node.port}/api/chat`;
+  const prompts = marketMode === "futures" ? FUTURES_PROMPTS : FOREX_PROMPTS;
 
   const response = await fetch(url, {
     method: "POST",
@@ -35,7 +43,7 @@ async function queryOllamaNode(
     body: JSON.stringify({
       model: node.model,
       messages: [
-        { role: "system", content: SYSTEM_PROMPTS[node.persona] || "" },
+        { role: "system", content: prompts[node.persona] || "" },
         { role: "user", content: userQuery },
       ],
       stream: false,
@@ -50,7 +58,6 @@ async function queryOllamaNode(
   const data = await response.json();
   const fullContent = data.message?.content || "";
 
-  // Extract thinking section if present (DeepSeek-R1 format)
   let thinking = "";
   let content = fullContent;
   const thinkMatch = fullContent.match(/<think>([\s\S]*?)<\/think>/);
@@ -68,7 +75,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { query } = await req.json();
+    const { query, marketMode = "forex" } = await req.json();
     if (!query || typeof query !== "string") {
       return new Response(
         JSON.stringify({ error: "Missing 'query' field" }),
@@ -76,7 +83,6 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Fetch VPS nodes from database
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
@@ -92,7 +98,6 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Filter to nodes that have an IP configured
     const activeNodes = (nodes as VPSNode[]).filter((n) => n.ip && n.ip.trim() !== "");
 
     if (activeNodes.length === 0) {
@@ -107,14 +112,12 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Race-to-Decision: 15 second timeout per node
     const TIMEOUT_MS = 15000;
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
-    // Query all active nodes in parallel
     const results = await Promise.allSettled(
-      activeNodes.map((node) => queryOllamaNode(node, query, controller.signal))
+      activeNodes.map((node) => queryOllamaNode(node, query, marketMode, controller.signal))
     );
 
     clearTimeout(timeout);
@@ -141,12 +144,10 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Determine degraded mode
     const totalConfigured = activeNodes.length;
     const successCount = responses.length;
     const degraded = successCount < totalConfigured;
 
-    // Generate unified signal from strategist response if available
     let unifiedSignal = null;
     const strategistResponse = responses.find((r) => r.persona === "strategist");
     if (strategistResponse) {
@@ -158,14 +159,13 @@ Deno.serve(async (req) => {
         action = "SELL";
       }
 
-      // Try to extract confidence
       const confMatch = strategistResponse.content.match(/(\d{1,3})%/);
       const confidence = confMatch ? parseInt(confMatch[1]) : 50;
 
       unifiedSignal = {
         action,
         confidence,
-        summary: `Based on ${successCount}/${totalConfigured} node responses.`,
+        summary: `Based on ${successCount}/${totalConfigured} node responses. Mode: ${marketMode.toUpperCase()}`,
       };
     }
 
