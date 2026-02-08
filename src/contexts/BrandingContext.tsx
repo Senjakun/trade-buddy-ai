@@ -1,40 +1,31 @@
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, ReactNode, useMemo } from "react";
+import { useBrandingConfig, BrandingConfig } from "@/hooks/useBrandingConfig";
 
-interface BrandingConfig {
-  siteName: string;
-  logoUrl: string;
-  tagline: string;
+interface BrandingContextValue {
+  branding: {
+    siteName: string;
+    logoUrl: string;
+    tagline: string;
+  };
+  isLoading: boolean;
 }
 
-interface BrandingContextType {
-  branding: BrandingConfig;
-  updateBranding: (config: Partial<BrandingConfig>) => void;
-}
-
-const defaultBranding: BrandingConfig = {
-  siteName: "Sovereign AI",
-  logoUrl: "",
-  tagline: "AI-Powered Trading Intelligence",
-};
-
-const BrandingContext = createContext<BrandingContextType | undefined>(undefined);
+const BrandingContext = createContext<BrandingContextValue | undefined>(undefined);
 
 export const BrandingProvider = ({ children }: { children: ReactNode }) => {
-  const [branding, setBranding] = useState<BrandingConfig>(() => {
-    const stored = localStorage.getItem("branding_config");
-    return stored ? { ...defaultBranding, ...JSON.parse(stored) } : defaultBranding;
-  });
+  const { data, isLoading } = useBrandingConfig();
 
-  const updateBranding = (config: Partial<BrandingConfig>) => {
-    setBranding((prev) => {
-      const next = { ...prev, ...config };
-      localStorage.setItem("branding_config", JSON.stringify(next));
-      return next;
-    });
-  };
+  const branding = useMemo(
+    () => ({
+      siteName: data?.site_name || "Sovereign AI",
+      logoUrl: data?.logo_url || "",
+      tagline: data?.tagline || "AI-Powered Trading Intelligence",
+    }),
+    [data]
+  );
 
   return (
-    <BrandingContext.Provider value={{ branding, updateBranding }}>
+    <BrandingContext.Provider value={{ branding, isLoading }}>
       {children}
     </BrandingContext.Provider>
   );
