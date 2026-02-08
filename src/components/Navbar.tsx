@@ -37,19 +37,19 @@ const Navbar = () => {
               href="#dashboard"
               className="text-sm text-muted-foreground transition-colors hover:text-foreground"
             >
-              Dashboard
+              Nodes
             </a>
             <a
               href="#chat"
               className="text-sm text-muted-foreground transition-colors hover:text-foreground"
             >
-              AI Chat
+              AI Analysis
             </a>
             <a
               href="#signals"
               className="text-sm text-muted-foreground transition-colors hover:text-foreground"
             >
-              Signals
+              Chart
             </a>
           </div>
 
@@ -85,13 +85,13 @@ const Navbar = () => {
           >
             <div className="flex flex-col gap-3 px-4 py-4">
               <a href="#dashboard" className="text-sm text-muted-foreground">
-                Dashboard
+                Nodes
               </a>
               <a href="#chat" className="text-sm text-muted-foreground">
-                AI Chat
+                AI Analysis
               </a>
               <a href="#signals" className="text-sm text-muted-foreground">
-                Signals
+                Chart
               </a>
               <div className="flex gap-2 pt-2">
                 <Button
