@@ -7,9 +7,8 @@ import {
   Crosshair,
   Loader2,
   AlertTriangle,
+  Sparkles,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useOllamaAnalysis, PersonaResponse } from "@/hooks/useOllamaAnalysis";
 import { useMarketMode } from "@/contexts/MarketModeContext";
 import PersonaBubble from "@/components/chat/PersonaBubble";
@@ -30,7 +29,7 @@ const QUICK_PICKS = {
   ],
 };
 
-interface ChatMessage {
+export interface ChatMessage {
   id: string;
   role: "user" | "ai";
   query?: string;
@@ -45,10 +44,16 @@ interface ChatMessage {
   timestamp: Date;
 }
 
-const TripleBubbleChat = () => {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+interface TripleBubbleChatProps {
+  messages: ChatMessage[];
+  setMessages: React.Dispatch<React.SetStateAction<ChatMessage[]>>;
+  onFirstMessage?: (query: string) => void;
+}
+
+const TripleBubbleChat = ({ messages, setMessages, onFirstMessage }: TripleBubbleChatProps) => {
   const [input, setInput] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const { analyze, isAnalyzing, lastError } = useOllamaAnalysis();
   const { mode } = useMarketMode();
 
@@ -70,6 +75,15 @@ const TripleBubbleChat = () => {
     const query = input;
     setInput("");
 
+    if (messages.length === 0 && onFirstMessage) {
+      onFirstMessage(query);
+    }
+
+    // Auto-resize textarea back
+    if (inputRef.current) {
+      inputRef.current.style.height = "auto";
+    }
+
     const result = await analyze(query, mode);
 
     if (result) {
@@ -89,48 +103,63 @@ const TripleBubbleChat = () => {
     }
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleAnalyze();
+    }
+  };
+
+  const handleTextareaInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setInput(e.target.value);
+    // Auto-resize
+    e.target.style.height = "auto";
+    e.target.style.height = Math.min(e.target.scrollHeight, 150) + "px";
+  };
+
   const picks = QUICK_PICKS[mode];
   const placeholderText = mode === "forex"
-    ? "Analyze EUR/USD for swing trade entry..."
-    : "Analyze ES futures for day trade setup...";
+    ? "Ask about any Forex pair or metal... e.g. 'Analyze XAUUSD'"
+    : "Ask about any futures contract... e.g. 'Analyze ES futures'";
 
   return (
     <div className="flex h-full flex-col">
       {/* Messages area */}
-      <div className="flex-1 overflow-y-auto scrollbar-void">
-        <div className="mx-auto max-w-3xl px-4 py-8 space-y-8">
-          {messages.length === 0 && (
-            <div className="flex min-h-[50vh] items-center justify-center">
-              <div className="text-center max-w-lg">
-                <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/5 border border-primary/10">
-                  <Brain className="h-8 w-8 text-primary/60" />
+      <div className="flex-1 overflow-y-auto scrollbar-chat">
+        <div className="mx-auto max-w-3xl px-4 py-6 space-y-6">
+          {/* Empty state */}
+          {messages.length === 0 && !isAnalyzing && (
+            <div className="flex min-h-[60vh] items-center justify-center">
+              <div className="text-center max-w-md">
+                <div className="mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10">
+                  <Sparkles className="h-7 w-7 text-primary" />
                 </div>
-                <h3 className="text-xl font-display font-semibold text-foreground">
-                  Omni-Asset AI Analysis
-                </h3>
-                <p className="mt-3 text-sm text-muted-foreground leading-relaxed">
+                <h2 className="text-2xl font-display font-bold text-foreground mb-2">
+                  Trade Buddy AI
+                </h2>
+                <p className="text-sm text-muted-foreground leading-relaxed mb-8">
                   Enter any {mode === "forex" ? "Forex pair or metal" : "futures contract"} to
-                  receive multi-persona analysis from your neural cluster.
-                  Each query activates three specialized AI agents.
+                  activate 3 AI agents — Analyst, Risk Manager, and Strategist — 
+                  for a multi-perspective trading analysis.
                 </p>
 
-                {/* Mode indicator */}
-                <div className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/5 px-3 py-1">
-                  <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
-                  <span className="font-mono text-[10px] font-semibold text-primary uppercase">
-                    {mode} Mode
-                  </span>
-                </div>
-
-                {/* Quick picks */}
-                <div className="mt-6 flex flex-wrap justify-center gap-2">
+                {/* Quick picks as cards */}
+                <div className="grid grid-cols-2 gap-2">
                   {picks.map((pick) => (
                     <button
                       key={pick.label}
-                      onClick={() => setInput(pick.query)}
-                      className="rounded-full border border-border/40 bg-muted/20 px-4 py-2 font-mono text-xs text-muted-foreground transition-all hover:border-primary/30 hover:text-primary hover:bg-primary/5"
+                      onClick={() => {
+                        setInput(pick.query);
+                        inputRef.current?.focus();
+                      }}
+                      className="rounded-xl border border-border bg-card/50 px-4 py-3 text-left transition-all hover:border-primary/30 hover:bg-card group"
                     >
-                      {pick.label}
+                      <span className="text-sm font-medium text-foreground group-hover:text-primary transition-colors">
+                        {pick.label}
+                      </span>
+                      <p className="mt-0.5 text-[11px] text-muted-foreground/60 truncate">
+                        {pick.query}
+                      </p>
                     </button>
                   ))}
                 </div>
@@ -138,82 +167,56 @@ const TripleBubbleChat = () => {
             </div>
           )}
 
+          {/* Chat messages */}
           {messages.map((msg) => (
             <div key={msg.id}>
+              {/* User message */}
               {msg.role === "user" && (
                 <motion.div
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="flex justify-end"
+                  className="flex justify-end mb-6"
                 >
-                  <div className="max-w-lg rounded-2xl rounded-br-sm bg-primary/10 border border-primary/15 px-5 py-3">
+                  <div className="max-w-xl rounded-2xl rounded-br-md bg-primary/15 border border-primary/20 px-5 py-3">
                     <p className="text-sm text-foreground leading-relaxed">{msg.query}</p>
                   </div>
                 </motion.div>
               )}
 
+              {/* AI response */}
               {msg.role === "ai" && msg.responses && (
                 <motion.div
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="space-y-5"
+                  className="space-y-4 mb-6"
                 >
                   {msg.degraded && (
                     <div className="flex items-center gap-2 rounded-lg border border-hold/20 bg-hold/5 px-3 py-2">
                       <AlertTriangle className="h-3.5 w-3.5 text-hold" />
-                      <span className="font-mono text-[11px] text-hold">
-                        DEGRADED — Some nodes failed to respond
+                      <span className="text-[11px] text-hold font-medium">
+                        Degraded Mode — Some nodes failed to respond
                       </span>
                     </div>
                   )}
 
-                  <Tabs
-                    defaultValue={msg.responses[0]?.persona || "analyst"}
-                    className="w-full"
-                  >
-                    <TabsList className="w-full bg-muted/20 border border-border/20 rounded-xl p-1">
-                      <TabsTrigger
-                        value="analyst"
-                        className="flex-1 rounded-lg data-[state=active]:bg-analyst/10 data-[state=active]:text-analyst"
-                      >
-                        <Brain className="mr-1.5 h-3.5 w-3.5" />
-                        <span className="hidden sm:inline">Analyst</span>
-                      </TabsTrigger>
-                      <TabsTrigger
-                        value="risk"
-                        className="flex-1 rounded-lg data-[state=active]:bg-risk/10 data-[state=active]:text-risk"
-                      >
-                        <ShieldAlert className="mr-1.5 h-3.5 w-3.5" />
-                        <span className="hidden sm:inline">Risk</span>
-                      </TabsTrigger>
-                      <TabsTrigger
-                        value="strategist"
-                        className="flex-1 rounded-lg data-[state=active]:bg-strategist/10 data-[state=active]:text-strategist"
-                      >
-                        <Crosshair className="mr-1.5 h-3.5 w-3.5" />
-                        <span className="hidden sm:inline">Strategist</span>
-                      </TabsTrigger>
-                    </TabsList>
-
+                  {/* Render all persona responses inline (no tabs) */}
+                  <div className="space-y-3">
                     {msg.responses.map((resp) => (
-                      <TabsContent key={resp.persona} value={resp.persona} className="mt-3">
-                        <PersonaBubble response={resp} />
-                      </TabsContent>
+                      <PersonaBubble key={resp.persona} response={resp} />
                     ))}
 
                     {msg.errors?.map((err) => (
-                      <TabsContent key={err.persona} value={err.persona} className="mt-3">
-                        <PersonaBubble
-                          response={{
-                            persona: err.persona as "analyst" | "risk" | "strategist",
-                            content: "",
-                            thinking: "",
-                            error: err.error,
-                          }}
-                        />
-                      </TabsContent>
+                      <PersonaBubble
+                        key={err.persona}
+                        response={{
+                          persona: err.persona as "analyst" | "risk" | "strategist",
+                          content: "",
+                          thinking: "",
+                          error: err.error,
+                        }}
+                      />
                     ))}
-                  </Tabs>
+                  </div>
 
                   {msg.unifiedSignal && (
                     <FinalDecision
@@ -226,34 +229,47 @@ const TripleBubbleChat = () => {
             </div>
           ))}
 
+          {/* Loading state */}
           {isAnalyzing && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="flex items-center gap-3 rounded-xl border border-border/20 bg-muted/5 p-4"
+              className="flex items-start gap-3 mb-6"
             >
-              <Loader2 className="h-5 w-5 animate-spin text-primary" />
-              <div>
-                <p className="text-sm font-medium text-foreground">
-                  Querying Neural Cluster...
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Analyst · Risk Manager · Strategist — {mode.toUpperCase()} mode
-                </p>
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                <Loader2 className="h-4 w-4 animate-spin text-primary" />
+              </div>
+              <div className="rounded-2xl rounded-tl-md bg-card border border-border px-4 py-3">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-sm font-medium text-foreground">Querying Neural Cluster</span>
+                  <span className="flex gap-1">
+                    <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" style={{ animationDelay: "0ms" }} />
+                    <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" style={{ animationDelay: "150ms" }} />
+                    <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" style={{ animationDelay: "300ms" }} />
+                  </span>
+                </div>
+                <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                  <span className="flex items-center gap-1"><Brain className="h-3 w-3 text-analyst" /> Analyst</span>
+                  <span className="flex items-center gap-1"><ShieldAlert className="h-3 w-3 text-risk" /> Risk</span>
+                  <span className="flex items-center gap-1"><Crosshair className="h-3 w-3 text-strategist" /> Strategist</span>
+                </div>
               </div>
             </motion.div>
           )}
 
+          {/* Error state */}
           {lastError && !isAnalyzing && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="flex items-center gap-3 rounded-xl border border-sell/20 bg-sell/5 p-4"
+              className="flex items-start gap-3 mb-6"
             >
-              <AlertTriangle className="h-5 w-5 text-sell" />
-              <div>
-                <p className="text-sm font-medium text-sell">Analysis Failed</p>
-                <p className="text-xs text-sell/60">{lastError}</p>
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-sell/10">
+                <AlertTriangle className="h-4 w-4 text-sell" />
+              </div>
+              <div className="rounded-2xl rounded-tl-md bg-card border border-sell/20 px-4 py-3">
+                <p className="text-sm font-medium text-sell mb-0.5">Analysis Failed</p>
+                <p className="text-xs text-sell/70">{lastError}</p>
               </div>
             </motion.div>
           )}
@@ -262,33 +278,34 @@ const TripleBubbleChat = () => {
         </div>
       </div>
 
-      {/* Fixed bottom input */}
-      <div className="border-t border-border/15 bg-background/80 backdrop-blur-xl">
-        <div className="mx-auto max-w-3xl px-4 py-4">
-          <div className="flex gap-3 rounded-2xl border border-border/30 bg-card/40 p-2 transition-colors focus-within:border-primary/30">
-            <input
-              type="text"
+      {/* Fixed bottom input bar */}
+      <div className="border-t border-border/40 bg-background">
+        <div className="mx-auto max-w-3xl px-4 py-3">
+          <div className="flex items-end gap-2 rounded-2xl border border-border bg-card px-3 py-2 transition-colors focus-within:border-primary/40 focus-within:ring-1 focus-within:ring-primary/20">
+            <textarea
+              ref={inputRef}
               value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleAnalyze()}
+              onChange={handleTextareaInput}
+              onKeyDown={handleKeyDown}
               placeholder={placeholderText}
-              className="flex-1 bg-transparent px-3 py-2 font-mono text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none"
+              rows={1}
+              className="flex-1 resize-none bg-transparent py-1.5 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none leading-relaxed"
               disabled={isAnalyzing}
+              style={{ maxHeight: 150 }}
             />
-            <Button
+            <button
               onClick={handleAnalyze}
               disabled={!input.trim() || isAnalyzing}
-              size="icon"
-              className="h-10 w-10 shrink-0 rounded-xl bg-primary/15 text-primary hover:bg-primary/25 border-0"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground transition-all hover:bg-primary/90 disabled:opacity-30 disabled:cursor-not-allowed"
             >
               {isAnalyzing ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
                 <Send className="h-4 w-4" />
               )}
-            </Button>
+            </button>
           </div>
-          <p className="mt-2 text-center font-mono text-[9px] text-muted-foreground/30">
+          <p className="mt-1.5 text-center text-[10px] text-muted-foreground/40">
             DeepSeek-R1 · Multi-Persona Consensus · {mode === "forex" ? "Forex & Metals" : "Futures & Commodities"}
           </p>
         </div>
