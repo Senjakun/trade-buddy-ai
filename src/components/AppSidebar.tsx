@@ -11,9 +11,12 @@ import {
   ChevronLeft,
   ChevronRight,
   Server,
+  TrendingUp,
+  BarChart3,
 } from "lucide-react";
 import { useOllama } from "@/contexts/OllamaContext";
 import { useBranding } from "@/contexts/BrandingContext";
+import { useMarketMode, MarketMode } from "@/contexts/MarketModeContext";
 import SettingsPanel from "@/components/SettingsPanel";
 
 const personaConfig = {
@@ -24,11 +27,17 @@ const personaConfig = {
 
 type PersonaKey = keyof typeof personaConfig;
 
+const modeConfig: Record<MarketMode, { icon: typeof TrendingUp; label: string }> = {
+  forex: { icon: TrendingUp, label: "Forex" },
+  futures: { icon: BarChart3, label: "Futures" },
+};
+
 const AppSidebar = () => {
   const [collapsed, setCollapsed] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const { nodes, isLoading } = useOllama();
   const { branding } = useBranding();
+  const { mode, setMode } = useMarketMode();
 
   const displayNodes = nodes.length > 0 ? nodes : [
     { id: "1", label: "VPS-1", persona: "analyst", model: "deepseek-r1", ip: "—", port: "11434", status: "offline" as const },
@@ -66,6 +75,46 @@ const AppSidebar = () => {
               </motion.span>
             )}
           </AnimatePresence>
+        </div>
+
+        {/* Market Mode Toggle */}
+        <div className="px-3 py-3 border-b border-border/10">
+          {!collapsed ? (
+            <div>
+              <span className="font-mono text-[9px] font-semibold text-muted-foreground/50 uppercase tracking-widest mb-2 block">
+                Market Mode
+              </span>
+              <div className="flex rounded-lg border border-border/20 bg-muted/10 p-0.5">
+                {(["forex", "futures"] as MarketMode[]).map((m) => {
+                  const cfg = modeConfig[m];
+                  const MIcon = cfg.icon;
+                  const isActive = mode === m;
+                  return (
+                    <button
+                      key={m}
+                      onClick={() => setMode(m)}
+                      className={`flex-1 flex items-center justify-center gap-1.5 rounded-md py-1.5 font-mono text-[10px] font-semibold transition-all ${
+                        isActive
+                          ? "bg-primary/15 text-primary"
+                          : "text-muted-foreground/40 hover:text-muted-foreground"
+                      }`}
+                    >
+                      <MIcon className="h-3 w-3" />
+                      {cfg.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ) : (
+            <button
+              onClick={() => setMode(mode === "forex" ? "futures" : "forex")}
+              className="flex w-full items-center justify-center rounded-lg p-1.5 text-primary hover:bg-muted/10 transition-colors"
+              title={`Switch to ${mode === "forex" ? "Futures" : "Forex"} mode`}
+            >
+              {mode === "forex" ? <TrendingUp className="h-3.5 w-3.5" /> : <BarChart3 className="h-3.5 w-3.5" />}
+            </button>
+          )}
         </div>
 
         {/* Neural Cluster Section */}
@@ -137,7 +186,6 @@ const AppSidebar = () => {
                 })}
           </div>
 
-          {/* Cluster summary */}
           {!collapsed && (
             <div className="mt-2 flex items-center gap-1.5 px-2">
               <span

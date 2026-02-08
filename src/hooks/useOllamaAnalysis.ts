@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import type { MarketMode } from "@/contexts/MarketModeContext";
 
 export interface PersonaResponse {
   persona: "analyst" | "risk" | "strategist";
@@ -25,13 +26,13 @@ export const useOllamaAnalysis = () => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [lastError, setLastError] = useState<string | null>(null);
 
-  const analyze = async (query: string): Promise<AnalysisResult | null> => {
+  const analyze = async (query: string, marketMode: MarketMode = "forex"): Promise<AnalysisResult | null> => {
     setIsAnalyzing(true);
     setLastError(null);
 
     try {
       const { data, error } = await supabase.functions.invoke("ollama-analyze", {
-        body: { query },
+        body: { query, marketMode },
       });
 
       if (error) {

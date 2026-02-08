@@ -11,8 +11,24 @@ import {
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useOllamaAnalysis, PersonaResponse } from "@/hooks/useOllamaAnalysis";
+import { useMarketMode } from "@/contexts/MarketModeContext";
 import PersonaBubble from "@/components/chat/PersonaBubble";
 import FinalDecision from "@/components/chat/FinalDecision";
+
+const QUICK_PICKS = {
+  forex: [
+    { label: "EUR/USD", query: "Analyze EUR/USD for a swing trade entry" },
+    { label: "XAU/USD", query: "Analyze XAU/USD (Gold) for intraday scalping" },
+    { label: "GBP/JPY", query: "Analyze GBP/JPY for trend continuation" },
+    { label: "USD/JPY", query: "Analyze USD/JPY for a breakout setup" },
+  ],
+  futures: [
+    { label: "ES (S&P 500)", query: "Analyze ES futures for a day trade setup" },
+    { label: "NQ (Nasdaq)", query: "Analyze NQ futures for a momentum entry" },
+    { label: "CL (Crude Oil)", query: "Analyze CL crude oil futures for a swing trade" },
+    { label: "GC (Gold)", query: "Analyze GC gold futures for trend continuation" },
+  ],
+};
 
 interface ChatMessage {
   id: string;
@@ -34,6 +50,7 @@ const TripleBubbleChat = () => {
   const [input, setInput] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { analyze, isAnalyzing, lastError } = useOllamaAnalysis();
+  const { mode } = useMarketMode();
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -53,7 +70,7 @@ const TripleBubbleChat = () => {
     const query = input;
     setInput("");
 
-    const result = await analyze(query);
+    const result = await analyze(query, mode);
 
     if (result) {
       const aiMsg: ChatMessage = {
@@ -72,35 +89,48 @@ const TripleBubbleChat = () => {
     }
   };
 
+  const picks = QUICK_PICKS[mode];
+  const placeholderText = mode === "forex"
+    ? "Analyze EUR/USD for swing trade entry..."
+    : "Analyze ES futures for day trade setup...";
+
   return (
     <div className="flex h-full flex-col">
-      {/* Messages area — centered content with breathing room */}
+      {/* Messages area */}
       <div className="flex-1 overflow-y-auto scrollbar-void">
         <div className="mx-auto max-w-3xl px-4 py-8 space-y-8">
           {messages.length === 0 && (
             <div className="flex min-h-[50vh] items-center justify-center">
-              <div className="text-center max-w-md">
+              <div className="text-center max-w-lg">
                 <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/5 border border-primary/10">
                   <Brain className="h-8 w-8 text-primary/60" />
                 </div>
                 <h3 className="text-xl font-display font-semibold text-foreground">
-                  AI Trading Analysis
+                  Omni-Asset AI Analysis
                 </h3>
                 <p className="mt-3 text-sm text-muted-foreground leading-relaxed">
-                  Enter a trading pair to receive multi-persona analysis
-                  from your neural cluster. Each query activates three
-                  specialized AI agents.
+                  Enter any {mode === "forex" ? "Forex pair or metal" : "futures contract"} to
+                  receive multi-persona analysis from your neural cluster.
+                  Each query activates three specialized AI agents.
                 </p>
+
+                {/* Mode indicator */}
+                <div className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/5 px-3 py-1">
+                  <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
+                  <span className="font-mono text-[10px] font-semibold text-primary uppercase">
+                    {mode} Mode
+                  </span>
+                </div>
+
+                {/* Quick picks */}
                 <div className="mt-6 flex flex-wrap justify-center gap-2">
-                  {["SOL/USDT", "BTC/USDT", "ETH/USDT"].map((pair) => (
+                  {picks.map((pick) => (
                     <button
-                      key={pair}
-                      onClick={() =>
-                        setInput(`Analyze ${pair} for a swing trade entry`)
-                      }
+                      key={pick.label}
+                      onClick={() => setInput(pick.query)}
                       className="rounded-full border border-border/40 bg-muted/20 px-4 py-2 font-mono text-xs text-muted-foreground transition-all hover:border-primary/30 hover:text-primary hover:bg-primary/5"
                     >
-                      {pair}
+                      {pick.label}
                     </button>
                   ))}
                 </div>
@@ -208,7 +238,7 @@ const TripleBubbleChat = () => {
                   Querying Neural Cluster...
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  Analyst · Risk Manager · Strategist
+                  Analyst · Risk Manager · Strategist — {mode.toUpperCase()} mode
                 </p>
               </div>
             </motion.div>
@@ -241,7 +271,7 @@ const TripleBubbleChat = () => {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleAnalyze()}
-              placeholder="Analyze SOL/USDT for swing trade entry..."
+              placeholder={placeholderText}
               className="flex-1 bg-transparent px-3 py-2 font-mono text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none"
               disabled={isAnalyzing}
             />
@@ -259,7 +289,7 @@ const TripleBubbleChat = () => {
             </Button>
           </div>
           <p className="mt-2 text-center font-mono text-[9px] text-muted-foreground/30">
-            Powered by DeepSeek-R1 · Multi-Persona Consensus Engine
+            DeepSeek-R1 · Multi-Persona Consensus · {mode === "forex" ? "Forex & Metals" : "Futures & Commodities"}
           </p>
         </div>
       </div>
