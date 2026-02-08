@@ -34,22 +34,10 @@ const Navbar = () => {
           {/* Desktop nav */}
           <div className="hidden items-center gap-6 md:flex">
             <a
-              href="#dashboard"
-              className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-            >
-              Nodes
-            </a>
-            <a
               href="#chat"
               className="text-sm text-muted-foreground transition-colors hover:text-foreground"
             >
               AI Analysis
-            </a>
-            <a
-              href="#signals"
-              className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-            >
-              Chart
             </a>
           </div>
 
@@ -84,14 +72,8 @@ const Navbar = () => {
             className="border-b border-border/30 bg-background/95 backdrop-blur-xl md:hidden"
           >
             <div className="flex flex-col gap-3 px-4 py-4">
-              <a href="#dashboard" className="text-sm text-muted-foreground">
-                Nodes
-              </a>
               <a href="#chat" className="text-sm text-muted-foreground">
                 AI Analysis
-              </a>
-              <a href="#signals" className="text-sm text-muted-foreground">
-                Chart
               </a>
               <div className="flex gap-2 pt-2">
                 <Button
