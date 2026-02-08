@@ -118,12 +118,12 @@ const FinalDecision = ({ signal, responses }: FinalDecisionProps) => {
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.5, delay: 0.2 }}
-      className={`mx-auto mt-4 max-w-lg rounded-xl border p-5 ${
+      className={`mx-auto max-w-lg rounded-xl border p-5 ${
         isGo
-          ? "border-buy/40 bg-buy/5 glow-buy"
+          ? "border-buy/30 bg-buy/5 glow-buy"
           : isSell
-          ? "border-sell/40 bg-sell/5 glow-sell"
-          : "border-hold/40 bg-hold/5"
+          ? "border-sell/30 bg-sell/5 glow-sell"
+          : "border-hold/30 bg-hold/5"
       }`}
     >
       {/* Header */}

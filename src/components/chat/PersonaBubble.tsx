@@ -10,14 +10,16 @@ const personaConfig: Record<
     icon: typeof Brain;
     colorClass: string;
     bgClass: string;
+    borderClass: string;
     model: string;
   }
 > = {
   analyst: {
-    label: "Analyst",
+    label: "Technical Analyst",
     icon: Brain,
     colorClass: "text-analyst",
     bgClass: "bg-analyst/10",
+    borderClass: "border-analyst/20",
     model: "DeepSeek-R1",
   },
   risk: {
@@ -25,82 +27,86 @@ const personaConfig: Record<
     icon: ShieldAlert,
     colorClass: "text-risk",
     bgClass: "bg-risk/10",
+    borderClass: "border-risk/20",
     model: "Llama 3",
   },
   strategist: {
-    label: "Strategist",
+    label: "Market Strategist",
     icon: Crosshair,
     colorClass: "text-strategist",
     bgClass: "bg-strategist/10",
+    borderClass: "border-strategist/20",
     model: "Mistral",
   },
 };
 
-const PersonaBubble = ({
-  response,
-}: {
-  response: PersonaResponse;
-}) => {
+const PersonaBubble = ({ response }: { response: PersonaResponse }) => {
   const config = personaConfig[response.persona] || personaConfig.analyst;
   const Icon = config.icon;
 
   if (response.error) {
     return (
       <motion.div
-        initial={{ opacity: 0, y: 10 }}
+        initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
-        className="void-card rounded-lg p-4 border border-sell/20"
+        className="rounded-xl border border-sell/20 bg-card p-4"
       >
-        <div className="mb-3 flex items-center gap-2">
-          <div className={`rounded-md ${config.bgClass} p-1.5`}>
+        <div className="mb-2 flex items-center gap-2">
+          <div className={`rounded-lg ${config.bgClass} p-1.5`}>
             <Icon className={`h-4 w-4 ${config.colorClass}`} />
           </div>
           <span className={`text-sm font-semibold ${config.colorClass}`}>
             {config.label}
           </span>
-          <span className="ml-auto rounded-full bg-sell/10 px-2 py-0.5 font-mono text-[10px] text-sell">
-            ERROR
+          <span className="ml-auto rounded-full bg-sell/10 px-2 py-0.5 text-[10px] font-mono font-semibold text-sell">
+            OFFLINE
           </span>
         </div>
-        <p className="font-mono text-xs text-sell/80">{response.error}</p>
+        <p className="text-xs text-sell/70">{response.error}</p>
       </motion.div>
     );
   }
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 10 }}
+      initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4 }}
-      className={`void-card rounded-lg p-4 persona-${response.persona}`}
+      transition={{ duration: 0.3 }}
+      className={`rounded-xl border ${config.borderClass} bg-card p-4`}
     >
+      {/* Header */}
       <div className="mb-3 flex items-center gap-2">
-        <div className={`rounded-md ${config.bgClass} p-1.5`}>
+        <div className={`rounded-lg ${config.bgClass} p-1.5`}>
           <Icon className={`h-4 w-4 ${config.colorClass}`} />
         </div>
-        <div>
+        <div className="flex items-center gap-2">
           <span className={`text-sm font-semibold ${config.colorClass}`}>
             {config.label}
           </span>
-          <span className="ml-2 font-mono text-[10px] text-muted-foreground">
+          <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-mono text-muted-foreground">
             {config.model}
           </span>
         </div>
       </div>
 
+      {/* Thinking Process (collapsible) */}
       {response.thinking && (
         <ThinkingSection thinking={response.thinking} persona={response.persona} />
       )}
 
-      <div className="prose prose-sm prose-invert max-w-none text-sm leading-relaxed text-foreground/90">
-        {response.content.split("\n").map((line, i) => (
-          <p
-            key={i}
-            className={`mb-1 ${line.startsWith("**") ? "font-semibold" : ""}`}
-          >
-            {line}
-          </p>
-        ))}
+      {/* Content */}
+      <div className="text-sm leading-relaxed text-foreground/90 space-y-1.5">
+        {response.content.split("\n").map((line, i) => {
+          if (!line.trim()) return null;
+          return (
+            <p
+              key={i}
+              className={line.startsWith("**") ? "font-semibold text-foreground" : ""}
+            >
+              {line}
+            </p>
+          );
+        })}
       </div>
     </motion.div>
   );

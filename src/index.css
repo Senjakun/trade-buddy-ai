@@ -6,79 +6,76 @@
 
 @layer base {
   :root {
-    --background: 0 0% 0%;
-    --foreground: 0 0% 92%;
+    /* ChatGPT-style dark theme — Slate tones */
+    --background: 222 47% 11%;
+    --foreground: 210 40% 98%;
 
-    --card: 0 0% 5%;
-    --card-foreground: 0 0% 92%;
+    --card: 217 33% 17%;
+    --card-foreground: 210 40% 98%;
 
-    --popover: 0 0% 5%;
-    --popover-foreground: 0 0% 92%;
+    --popover: 217 33% 17%;
+    --popover-foreground: 210 40% 98%;
 
-    --primary: 160 100% 40%;
-    --primary-foreground: 0 0% 0%;
+    --primary: 160 84% 39%;
+    --primary-foreground: 222 47% 11%;
 
-    --secondary: 0 0% 8%;
-    --secondary-foreground: 0 0% 70%;
+    --secondary: 217 33% 17%;
+    --secondary-foreground: 215 20% 65%;
 
-    --muted: 0 0% 10%;
-    --muted-foreground: 0 0% 45%;
+    --muted: 217 33% 17%;
+    --muted-foreground: 215 20% 65%;
 
-    --accent: 160 80% 35%;
-    --accent-foreground: 0 0% 92%;
+    --accent: 160 60% 35%;
+    --accent-foreground: 210 40% 98%;
 
-    --destructive: 0 85% 50%;
-    --destructive-foreground: 0 0% 95%;
+    --destructive: 0 85% 60%;
+    --destructive-foreground: 210 40% 98%;
 
-    --success: 145 80% 42%;
-    --success-foreground: 0 0% 0%;
+    --success: 145 72% 40%;
+    --success-foreground: 222 47% 11%;
 
     --warning: 38 92% 55%;
-    --warning-foreground: 0 0% 0%;
+    --warning-foreground: 222 47% 11%;
 
-    --buy: 145 80% 42%;
-    --buy-foreground: 0 0% 0%;
+    --buy: 145 72% 40%;
+    --buy-foreground: 222 47% 11%;
 
-    --sell: 0 85% 50%;
-    --sell-foreground: 0 0% 95%;
+    --sell: 0 85% 60%;
+    --sell-foreground: 210 40% 98%;
 
     --hold: 38 92% 55%;
-    --hold-foreground: 0 0% 0%;
+    --hold-foreground: 222 47% 11%;
 
-    --border: 0 0% 12%;
-    --input: 0 0% 12%;
-    --ring: 160 100% 40%;
+    --border: 217 33% 22%;
+    --input: 217 33% 22%;
+    --ring: 160 84% 39%;
 
     --radius: 0.75rem;
 
-    --chart-up: 145 80% 42%;
-    --chart-down: 0 85% 50%;
-    --chart-line: 160 100% 40%;
-
-    --glow-primary: 0 0 30px hsl(160 100% 40% / 0.25);
-    --glow-buy: 0 0 20px hsl(145 80% 42% / 0.3);
-    --glow-sell: 0 0 20px hsl(0 85% 50% / 0.3);
+    --chart-up: 145 72% 40%;
+    --chart-down: 0 85% 60%;
+    --chart-line: 160 84% 39%;
 
     --analyst: 200 80% 55%;
-    --analyst-foreground: 0 0% 0%;
+    --analyst-foreground: 222 47% 11%;
     --risk: 38 92% 55%;
-    --risk-foreground: 0 0% 0%;
+    --risk-foreground: 222 47% 11%;
     --strategist: 280 70% 60%;
-    --strategist-foreground: 0 0% 0%;
+    --strategist-foreground: 222 47% 11%;
 
-    --sidebar-background: 0 0% 3%;
-    --sidebar-foreground: 0 0% 70%;
-    --sidebar-primary: 160 100% 40%;
-    --sidebar-primary-foreground: 0 0% 0%;
-    --sidebar-accent: 0 0% 10%;
-    --sidebar-accent-foreground: 0 0% 92%;
-    --sidebar-border: 0 0% 12%;
-    --sidebar-ring: 160 100% 40%;
+    --sidebar-background: 222 47% 8%;
+    --sidebar-foreground: 215 20% 65%;
+    --sidebar-primary: 160 84% 39%;
+    --sidebar-primary-foreground: 222 47% 11%;
+    --sidebar-accent: 217 33% 14%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 217 33% 18%;
+    --sidebar-ring: 160 84% 39%;
   }
 
   .dark {
-    --background: 0 0% 0%;
-    --foreground: 0 0% 92%;
+    --background: 222 47% 11%;
+    --foreground: 210 40% 98%;
   }
 }
 
@@ -102,74 +99,18 @@
     font-variant-numeric: tabular-nums;
   }
 
-  .obsidian-card {
-    background-color: hsl(0 0% 5%);
-    border: 1px solid hsl(0 0% 12% / 0.6);
+  .scrollbar-chat::-webkit-scrollbar {
+    width: 6px;
   }
-
-  .glass-card {
-    @apply bg-card/60 backdrop-blur-xl border border-border/50;
-  }
-
-  .void-card {
-    background: linear-gradient(145deg, hsl(0 0% 5%), hsl(0 0% 3%));
-    border: 1px solid hsl(0 0% 12% / 0.4);
-  }
-
-  .glow-primary {
-    box-shadow: var(--glow-primary);
-  }
-
-  .glow-buy {
-    box-shadow: var(--glow-buy);
-  }
-
-  .glow-sell {
-    box-shadow: var(--glow-sell);
-  }
-
-  .text-gradient-primary {
-    @apply bg-clip-text text-transparent;
-    background-image: linear-gradient(135deg, hsl(160 100% 40%), hsl(145 80% 50%));
-  }
-
-  .text-gradient-hero {
-    @apply bg-clip-text text-transparent;
-    background-image: linear-gradient(135deg, hsl(160 100% 45%), hsl(145 80% 55%), hsl(160 100% 35%));
-  }
-
-  .bg-grid-pattern {
-    background-image: 
-      linear-gradient(hsl(0 0% 8% / 0.5) 1px, transparent 1px),
-      linear-gradient(90deg, hsl(0 0% 8% / 0.5) 1px, transparent 1px);
-    background-size: 60px 60px;
-  }
-
-  .animate-pulse-glow {
-    animation: pulseGlow 3s ease-in-out infinite;
-  }
-
-  .animate-ticker {
-    animation: ticker 30s linear infinite;
-  }
-
-  .animate-float {
-    animation: float 6s ease-in-out infinite;
-  }
-
-  .animate-typing {
-    animation: blink 1s step-end infinite;
-  }
-
-  .scrollbar-void::-webkit-scrollbar {
-    width: 4px;
-  }
-  .scrollbar-void::-webkit-scrollbar-track {
+  .scrollbar-chat::-webkit-scrollbar-track {
     background: transparent;
   }
-  .scrollbar-void::-webkit-scrollbar-thumb {
-    background: hsl(0 0% 20%);
-    border-radius: 2px;
+  .scrollbar-chat::-webkit-scrollbar-thumb {
+    background: hsl(217 33% 25%);
+    border-radius: 3px;
+  }
+  .scrollbar-chat::-webkit-scrollbar-thumb:hover {
+    background: hsl(217 33% 35%);
   }
 
   .persona-analyst {
@@ -183,21 +124,14 @@
   .persona-strategist {
     border-left: 3px solid hsl(var(--strategist));
   }
-}
 
-@keyframes pulseGlow {
-  0%, 100% { opacity: 0.4; }
-  50% { opacity: 1; }
-}
+  .glow-buy {
+    box-shadow: 0 0 20px hsl(145 72% 40% / 0.2);
+  }
 
-@keyframes ticker {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
-}
-
-@keyframes float {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-10px); }
+  .glow-sell {
+    box-shadow: 0 0 20px hsl(0 85% 60% / 0.2);
+  }
 }
 
 @keyframes blink {
