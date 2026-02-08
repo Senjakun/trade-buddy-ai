@@ -43,8 +43,22 @@ apt update -y && apt upgrade -y
 apt install -y curl git nginx
 
 # Install Node.js via nvm
-echo -e "${GREEN}📦 Step 2: Install Node.js...${NC}"
-if ! command -v node &> /dev/null; then
+echo -e "${GREEN}📦 Step 2: Install Node.js 20...${NC}"
+# Cek versi Node.js, install/upgrade jika belum v20+
+NEED_NODE=true
+if command -v node &> /dev/null; then
+  NODE_MAJOR=$(node -v | grep -oP '(?<=v)\d+')
+  if [ "$NODE_MAJOR" -ge 20 ] 2>/dev/null; then
+    NEED_NODE=false
+    echo -e "${CYAN}   Node.js sudah v20+, skip install${NC}"
+  else
+    echo -e "${YELLOW}   Node.js versi lama ($(node -v)), upgrade ke v20...${NC}"
+  fi
+fi
+
+if [ "$NEED_NODE" = true ]; then
+  # Hapus NodeSource lama jika ada
+  rm -f /etc/apt/sources.list.d/nodesource.list 2>/dev/null
   curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
   apt install -y nodejs
 fi
