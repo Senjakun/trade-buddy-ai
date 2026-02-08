@@ -1,4 +1,4 @@
-import { createContext, useContext, ReactNode, useMemo } from "react";
+import { createContext, useContext, ReactNode, useMemo, useEffect } from "react";
 import { useBrandingConfig, BrandingConfig } from "@/hooks/useBrandingConfig";
 
 interface BrandingContextValue {
@@ -23,6 +23,26 @@ export const BrandingProvider = ({ children }: { children: ReactNode }) => {
     }),
     [data]
   );
+
+  // Dynamic document title
+  useEffect(() => {
+    document.title = branding.siteName
+      ? `${branding.siteName} — ${branding.tagline}`
+      : "Sovereign AI — AI-Powered Trading Intelligence";
+  }, [branding.siteName, branding.tagline]);
+
+  // Dynamic favicon from logo
+  useEffect(() => {
+    if (branding.logoUrl) {
+      let link = document.querySelector<HTMLLinkElement>("link[rel~='icon']");
+      if (!link) {
+        link = document.createElement("link");
+        link.rel = "icon";
+        document.head.appendChild(link);
+      }
+      link.href = branding.logoUrl;
+    }
+  }, [branding.logoUrl]);
 
   return (
     <BrandingContext.Provider value={{ branding, isLoading }}>
