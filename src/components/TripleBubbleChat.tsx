@@ -1,221 +1,39 @@
 import { useState, useRef, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   Send,
   Brain,
   ShieldAlert,
   Crosshair,
   Loader2,
-  ChevronDown,
-  ChevronUp,
-  Sparkles,
+  AlertTriangle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-
-interface PersonaResponse {
-  persona: "analyst" | "risk" | "strategist";
-  thinking: string;
-  content: string;
-  isStreaming: boolean;
-}
+import { useOllamaAnalysis, PersonaResponse } from "@/hooks/useOllamaAnalysis";
+import PersonaBubble from "@/components/chat/PersonaBubble";
+import SignalBadge from "@/components/chat/SignalBadge";
 
 interface ChatMessage {
   id: string;
   role: "user" | "ai";
   query?: string;
   responses?: PersonaResponse[];
+  errors?: Array<{ persona: string; error: string }>;
+  degraded?: boolean;
   unifiedSignal?: {
     action: "BUY" | "SELL" | "HOLD";
     confidence: number;
     summary: string;
-  };
+  } | null;
   timestamp: Date;
 }
-
-const personaConfig = {
-  analyst: {
-    label: "Analyst",
-    icon: Brain,
-    colorClass: "text-analyst",
-    bgClass: "bg-analyst/10",
-    borderClass: "border-analyst/30",
-    model: "DeepSeek-R1",
-  },
-  risk: {
-    label: "Risk Manager",
-    icon: ShieldAlert,
-    colorClass: "text-risk",
-    bgClass: "bg-risk/10",
-    borderClass: "border-risk/30",
-    model: "Llama 3",
-  },
-  strategist: {
-    label: "Strategist",
-    icon: Crosshair,
-    colorClass: "text-strategist",
-    bgClass: "bg-strategist/10",
-    borderClass: "border-strategist/30",
-    model: "Mistral",
-  },
-};
-
-// Mock streaming data
-const mockResponses: Record<string, PersonaResponse> = {
-  analyst: {
-    persona: "analyst",
-    thinking:
-      "Analyzing SOL/USDT on 4H timeframe... RSI at 42.3 showing oversold conditions. MACD histogram showing bullish divergence. Fibonacci 0.618 retracement level at $168.50 acting as strong support. Japanese candlestick pattern: Bullish engulfing forming at key support.",
-    content:
-      "**Technical Analysis — SOL/USDT**\n\n📊 **RSI (4H):** 42.3 — Approaching oversold territory\n📈 **MACD:** Bullish divergence confirmed on histogram\n📐 **Fibonacci:** Price holding 0.618 retracement ($168.50)\n🕯️ **Candlestick:** Bullish engulfing at key support zone\n\n**Verdict:** Technical indicators favor a long entry. Support at $168.50 is strong with multiple confluence factors.",
-    isStreaming: false,
-  },
-  risk: {
-    persona: "risk",
-    thinking:
-      "Evaluating risk parameters... Current volatility is moderate. ATR(14) at $8.20. Position sizing based on 2% account risk. Calculating optimal stop-loss and take-profit levels based on recent swing structure.",
-    content:
-      "**Risk Assessment — SOL/USDT**\n\n🛡️ **Stop-Loss:** $164.20 (below swing low, -2.8%)\n🎯 **Take-Profit 1:** $178.50 (+5.7%, R:R 2.0)\n🎯 **Take-Profit 2:** $185.00 (+9.5%, R:R 3.4)\n💰 **Position Size:** 3.2% of portfolio (moderate)\n⚡ **Volatility:** ATR(14) $8.20 — Moderate\n\n**Risk Score:** 6.5/10 — Acceptable for swing trade. Keep position size conservative due to broader market uncertainty.",
-    isStreaming: false,
-  },
-  strategist: {
-    persona: "strategist",
-    thinking:
-      "Cross-referencing technical and risk data... Market sentiment is cautiously bullish. BTC dominance declining which favors altcoins. SOL ecosystem showing strong developer activity. Funding rates neutral. Social sentiment turning positive.",
-    content:
-      '**Strategic Decision — SOL/USDT**\n\n🌐 **Market Sentiment:** Cautiously Bullish\n📉 **BTC Dominance:** Declining — altcoin-favorable\n🔗 **On-chain:** DEX volume up 23% on Solana\n💬 **Social Score:** 7.2/10 — Positive momentum\n\n**🟢 FINAL DECISION: GO — LONG**\n\nConfidence: **84%**\nEntry Zone: $168.50 – $170.00\nTimeframe: 2-5 days swing\n\n_"The confluence of technical support, manageable risk, and positive sentiment creates a favorable risk-reward setup."_',
-    isStreaming: false,
-  },
-};
-
-const ThinkingSection = ({
-  thinking,
-  persona,
-}: {
-  thinking: string;
-  persona: "analyst" | "risk" | "strategist";
-}) => {
-  const [expanded, setExpanded] = useState(false);
-  const config = personaConfig[persona];
-
-  return (
-    <div className="mb-3 rounded-md border border-border/30 bg-muted/20">
-      <button
-        onClick={() => setExpanded(!expanded)}
-        className="flex w-full items-center gap-2 px-3 py-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
-      >
-        <Sparkles className={`h-3 w-3 ${config.colorClass}`} />
-        <span className="font-mono">Thinking Process</span>
-        {expanded ? (
-          <ChevronUp className="ml-auto h-3 w-3" />
-        ) : (
-          <ChevronDown className="ml-auto h-3 w-3" />
-        )}
-      </button>
-      <AnimatePresence>
-        {expanded && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            className="overflow-hidden"
-          >
-            <p className="px-3 pb-3 font-mono text-xs leading-relaxed text-muted-foreground/80 italic">
-              {thinking}
-            </p>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-};
-
-const PersonaBubble = ({ response }: { response: PersonaResponse }) => {
-  const config = personaConfig[response.persona];
-  const Icon = config.icon;
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4 }}
-      className={`void-card rounded-lg p-4 persona-${response.persona}`}
-    >
-      <div className="mb-3 flex items-center gap-2">
-        <div className={`rounded-md ${config.bgClass} p-1.5`}>
-          <Icon className={`h-4 w-4 ${config.colorClass}`} />
-        </div>
-        <div>
-          <span className={`text-sm font-semibold ${config.colorClass}`}>
-            {config.label}
-          </span>
-          <span className="ml-2 font-mono text-[10px] text-muted-foreground">
-            {config.model}
-          </span>
-        </div>
-      </div>
-
-      {response.thinking && (
-        <ThinkingSection thinking={response.thinking} persona={response.persona} />
-      )}
-
-      <div className="prose prose-sm prose-invert max-w-none text-sm leading-relaxed text-foreground/90">
-        {response.content.split("\n").map((line, i) => (
-          <p key={i} className={`mb-1 ${line.startsWith("**") ? "font-semibold" : ""}`}>
-            {line}
-          </p>
-        ))}
-        {response.isStreaming && (
-          <span className="inline-block h-4 w-1 animate-typing bg-foreground/60 ml-0.5" />
-        )}
-      </div>
-    </motion.div>
-  );
-};
-
-const SignalBadge = ({
-  signal,
-}: {
-  signal: { action: string; confidence: number; summary: string };
-}) => {
-  const isGo = signal.action === "BUY";
-  const isSell = signal.action === "SELL";
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.9 }}
-      animate={{ opacity: 1, scale: 1 }}
-      className={`mx-auto mt-4 max-w-md rounded-xl border p-4 text-center ${
-        isGo
-          ? "border-buy/40 bg-buy/5 glow-buy"
-          : isSell
-          ? "border-sell/40 bg-sell/5 glow-sell"
-          : "border-hold/40 bg-hold/5"
-      }`}
-    >
-      <div className="mb-1 text-xs font-mono text-muted-foreground uppercase tracking-wider">
-        Unified AI Decision
-      </div>
-      <div
-        className={`text-2xl font-black font-display ${
-          isGo ? "text-buy" : isSell ? "text-sell" : "text-hold"
-        }`}
-      >
-        {signal.action === "BUY" ? "🟢 GO — LONG" : signal.action === "SELL" ? "🔴 NO GO — SHORT" : "🟡 HOLD — WAIT"}
-      </div>
-      <div className="mt-1 font-mono text-sm text-foreground/70">
-        Confidence: <span className="font-bold text-foreground">{signal.confidence}%</span>
-      </div>
-      <p className="mt-2 text-xs text-muted-foreground">{signal.summary}</p>
-    </motion.div>
-  );
-};
 
 const TripleBubbleChat = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { analyze, isAnalyzing, lastError } = useOllamaAnalysis();
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -232,31 +50,26 @@ const TripleBubbleChat = () => {
     };
 
     setMessages((prev) => [...prev, userMsg]);
+    const query = input;
     setInput("");
-    setIsAnalyzing(true);
 
-    // Simulate streaming with delays
-    await new Promise((r) => setTimeout(r, 1500));
+    const result = await analyze(query);
 
-    const aiMsg: ChatMessage = {
-      id: crypto.randomUUID(),
-      role: "ai",
-      responses: [
-        mockResponses.analyst,
-        mockResponses.risk,
-        mockResponses.strategist,
-      ],
-      unifiedSignal: {
-        action: "BUY",
-        confidence: 84,
-        summary:
-          "Technical support + manageable risk + positive sentiment = favorable long setup on SOL/USDT.",
-      },
-      timestamp: new Date(),
-    };
-
-    setMessages((prev) => [...prev, aiMsg]);
-    setIsAnalyzing(false);
+    if (result) {
+      const aiMsg: ChatMessage = {
+        id: crypto.randomUUID(),
+        role: "ai",
+        responses: result.responses.map((r) => ({
+          ...r,
+          persona: r.persona as "analyst" | "risk" | "strategist",
+        })),
+        errors: result.errors,
+        degraded: result.degraded,
+        unifiedSignal: result.unifiedSignal,
+        timestamp: new Date(),
+      };
+      setMessages((prev) => [...prev, aiMsg]);
+    }
   };
 
   return (
@@ -274,13 +87,15 @@ const TripleBubbleChat = () => {
               </h3>
               <p className="mt-2 max-w-sm text-sm text-muted-foreground">
                 Enter a trading pair (e.g. SOL/USDT) to receive multi-persona
-                analysis from our AI nodes.
+                analysis from your Ollama AI nodes.
               </p>
               <div className="mt-4 flex flex-wrap justify-center gap-2">
                 {["SOL/USDT", "BTC/USDT", "ETH/USDT"].map((pair) => (
                   <button
                     key={pair}
-                    onClick={() => setInput(`Analyze ${pair} for a swing trade entry`)}
+                    onClick={() =>
+                      setInput(`Analyze ${pair} for a swing trade entry`)
+                    }
                     className="rounded-full border border-border/50 bg-muted/30 px-3 py-1.5 font-mono text-xs text-muted-foreground transition-colors hover:border-primary/30 hover:text-primary"
                   >
                     {pair}
@@ -307,7 +122,23 @@ const TripleBubbleChat = () => {
 
             {msg.role === "ai" && msg.responses && (
               <div className="space-y-4">
-                <Tabs defaultValue="analyst" className="w-full">
+                {msg.degraded && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="flex items-center gap-2 rounded-lg border border-hold/30 bg-hold/5 px-3 py-2"
+                  >
+                    <AlertTriangle className="h-4 w-4 text-hold" />
+                    <span className="font-mono text-xs text-hold">
+                      DEGRADED MODE — Some nodes failed to respond
+                    </span>
+                  </motion.div>
+                )}
+
+                <Tabs
+                  defaultValue={msg.responses[0]?.persona || "analyst"}
+                  className="w-full"
+                >
                   <TabsList className="w-full bg-muted/30 border border-border/30">
                     <TabsTrigger
                       value="analyst"
@@ -331,9 +162,25 @@ const TripleBubbleChat = () => {
                       Strategist
                     </TabsTrigger>
                   </TabsList>
+
+                  {/* Show successful responses */}
                   {msg.responses.map((resp) => (
                     <TabsContent key={resp.persona} value={resp.persona}>
                       <PersonaBubble response={resp} />
+                    </TabsContent>
+                  ))}
+
+                  {/* Show error tabs for failed nodes */}
+                  {msg.errors?.map((err) => (
+                    <TabsContent key={err.persona} value={err.persona}>
+                      <PersonaBubble
+                        response={{
+                          persona: err.persona as "analyst" | "risk" | "strategist",
+                          content: "",
+                          thinking: "",
+                          error: err.error,
+                        }}
+                      />
                     </TabsContent>
                   ))}
                 </Tabs>
@@ -356,8 +203,23 @@ const TripleBubbleChat = () => {
                 Querying AI Nodes...
               </p>
               <p className="text-xs text-muted-foreground">
-                Fetching analysis from Analyst, Risk Manager, and Strategist
+                Fetching analysis from Analyst, Risk Manager, and Strategist via
+                Ollama
               </p>
+            </div>
+          </motion.div>
+        )}
+
+        {lastError && !isAnalyzing && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="flex items-center gap-3 rounded-lg border border-sell/30 bg-sell/5 p-4"
+          >
+            <AlertTriangle className="h-5 w-5 text-sell" />
+            <div>
+              <p className="text-sm font-medium text-sell">Analysis Failed</p>
+              <p className="text-xs text-sell/70">{lastError}</p>
             </div>
           </motion.div>
         )}

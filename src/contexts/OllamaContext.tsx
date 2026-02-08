@@ -1,68 +1,26 @@
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, ReactNode } from "react";
+import { useVPSNodes, useUpdateVPSNode, VPSNode } from "@/hooks/useVPSNodes";
 
-export interface VPSNode {
-  id: string;
-  label: string;
-  persona: string;
-  model: string;
-  ip: string;
-  port: string;
-  status: "online" | "offline" | "degraded";
-}
+export type { VPSNode };
 
 interface OllamaContextType {
   nodes: VPSNode[];
+  isLoading: boolean;
   updateNode: (id: string, updates: Partial<VPSNode>) => void;
 }
-
-const defaultNodes: VPSNode[] = [
-  {
-    id: "vps1",
-    label: "VPS 1 — Analyst",
-    persona: "analyst",
-    model: "deepseek-r1",
-    ip: "",
-    port: "11434",
-    status: "offline",
-  },
-  {
-    id: "vps2",
-    label: "VPS 2 — Risk Manager",
-    persona: "risk",
-    model: "llama3",
-    ip: "",
-    port: "11434",
-    status: "offline",
-  },
-  {
-    id: "vps3",
-    label: "VPS 3 — Strategist",
-    persona: "strategist",
-    model: "mistral",
-    ip: "",
-    port: "11434",
-    status: "offline",
-  },
-];
 
 const OllamaContext = createContext<OllamaContextType | undefined>(undefined);
 
 export const OllamaProvider = ({ children }: { children: ReactNode }) => {
-  const [nodes, setNodes] = useState<VPSNode[]>(() => {
-    const stored = localStorage.getItem("ollama_nodes");
-    return stored ? JSON.parse(stored) : defaultNodes;
-  });
+  const { data: nodes = [], isLoading } = useVPSNodes();
+  const updateMutation = useUpdateVPSNode();
 
   const updateNode = (id: string, updates: Partial<VPSNode>) => {
-    setNodes((prev) => {
-      const next = prev.map((n) => (n.id === id ? { ...n, ...updates } : n));
-      localStorage.setItem("ollama_nodes", JSON.stringify(next));
-      return next;
-    });
+    updateMutation.mutate({ id, updates });
   };
 
   return (
-    <OllamaContext.Provider value={{ nodes, updateNode }}>
+    <OllamaContext.Provider value={{ nodes, isLoading, updateNode }}>
       {children}
     </OllamaContext.Provider>
   );

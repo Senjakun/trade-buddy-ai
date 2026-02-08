@@ -8,6 +8,7 @@ import {
   Check,
   AlertCircle,
   Loader2,
+  ExternalLink,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useOllama, VPSNode } from "@/contexts/OllamaContext";
@@ -21,16 +22,29 @@ const SettingsPanel = ({
   onClose: () => void;
 }) => {
   const { nodes, updateNode } = useOllama();
-  const { branding, updateBranding } = useBranding();
+  const { branding } = useBranding();
   const [activeTab, setActiveTab] = useState<"nodes" | "branding">("nodes");
   const [testingNode, setTestingNode] = useState<string | null>(null);
 
   const testConnection = async (node: VPSNode) => {
     if (!node.ip) return;
     setTestingNode(node.id);
-    // Simulate test
-    await new Promise((r) => setTimeout(r, 1500));
-    updateNode(node.id, { status: Math.random() > 0.3 ? "online" : "offline" });
+
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 5000);
+
+      const response = await fetch(
+        `http://${node.ip}:${node.port}/api/tags`,
+        { signal: controller.signal }
+      );
+      clearTimeout(timeout);
+
+      updateNode(node.id, { status: response.ok ? "online" : "degraded" });
+    } catch {
+      updateNode(node.id, { status: "offline" });
+    }
+
     setTestingNode(null);
   };
 
@@ -95,7 +109,8 @@ const SettingsPanel = ({
                 <>
                   <p className="text-xs text-muted-foreground">
                     Configure your Ollama VPS endpoints. Each node runs a
-                    specialized AI model for trading analysis.
+                    specialized AI model for trading analysis. Changes are stored
+                    locally for testing — manage permanent configs via the backend panel.
                   </p>
 
                   {nodes.map((node) => (
@@ -169,10 +184,8 @@ const SettingsPanel = ({
                         <input
                           type="text"
                           value={node.model}
-                          onChange={(e) =>
-                            updateNode(node.id, { model: e.target.value })
-                          }
-                          className="w-full rounded-md border border-border/50 bg-muted/20 px-3 py-2 font-mono text-xs text-foreground focus:border-primary/50 focus:outline-none"
+                          readOnly
+                          className="w-full rounded-md border border-border/50 bg-muted/10 px-3 py-2 font-mono text-xs text-muted-foreground cursor-not-allowed"
                         />
                       </div>
 
@@ -205,7 +218,8 @@ const SettingsPanel = ({
                       <code className="rounded bg-muted px-1 py-0.5 font-mono text-[10px] text-foreground">
                         OLLAMA_HOST=0.0.0.0
                       </code>{" "}
-                      and port 11434 is accessible.
+                      and port 11434 is accessible. VPS IPs are fetched from the
+                      database each time you run an analysis.
                     </p>
                   </div>
                 </>
@@ -214,8 +228,8 @@ const SettingsPanel = ({
               {activeTab === "branding" && (
                 <>
                   <p className="text-xs text-muted-foreground">
-                    Customize the portal's branding. Changes apply immediately
-                    across all UI elements.
+                    Branding is managed via the backend database. The values below
+                    are fetched dynamically and applied across all UI elements.
                   </p>
 
                   <div className="space-y-4">
@@ -223,30 +237,18 @@ const SettingsPanel = ({
                       <label className="mb-1 block text-[10px] uppercase tracking-wider text-muted-foreground">
                         Site Name
                       </label>
-                      <input
-                        type="text"
-                        value={branding.siteName}
-                        onChange={(e) =>
-                          updateBranding({ siteName: e.target.value })
-                        }
-                        placeholder="Sovereign AI"
-                        className="w-full rounded-md border border-border/50 bg-muted/20 px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/40 focus:border-primary/50 focus:outline-none"
-                      />
+                      <div className="w-full rounded-md border border-border/50 bg-muted/10 px-3 py-2 text-sm text-foreground">
+                        {branding.siteName}
+                      </div>
                     </div>
 
                     <div>
                       <label className="mb-1 block text-[10px] uppercase tracking-wider text-muted-foreground">
                         Logo URL
                       </label>
-                      <input
-                        type="text"
-                        value={branding.logoUrl}
-                        onChange={(e) =>
-                          updateBranding({ logoUrl: e.target.value })
-                        }
-                        placeholder="https://example.com/logo.svg"
-                        className="w-full rounded-md border border-border/50 bg-muted/20 px-3 py-2 font-mono text-xs text-foreground placeholder:text-muted-foreground/40 focus:border-primary/50 focus:outline-none"
-                      />
+                      <div className="w-full rounded-md border border-border/50 bg-muted/10 px-3 py-2 font-mono text-xs text-muted-foreground break-all">
+                        {branding.logoUrl || "No logo configured"}
+                      </div>
                       {branding.logoUrl && (
                         <div className="mt-2 flex items-center gap-2 rounded-md border border-border/30 bg-muted/10 p-2">
                           <img
@@ -268,15 +270,20 @@ const SettingsPanel = ({
                       <label className="mb-1 block text-[10px] uppercase tracking-wider text-muted-foreground">
                         Tagline
                       </label>
-                      <input
-                        type="text"
-                        value={branding.tagline}
-                        onChange={(e) =>
-                          updateBranding({ tagline: e.target.value })
-                        }
-                        placeholder="AI-Powered Trading Intelligence"
-                        className="w-full rounded-md border border-border/50 bg-muted/20 px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/40 focus:border-primary/50 focus:outline-none"
-                      />
+                      <div className="w-full rounded-md border border-border/50 bg-muted/10 px-3 py-2 text-sm text-foreground">
+                        {branding.tagline}
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-2 rounded-lg border border-border/30 bg-muted/10 p-3">
+                      <ExternalLink className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                      <p className="text-xs text-muted-foreground">
+                        To update branding, modify the{" "}
+                        <code className="rounded bg-muted px-1 py-0.5 font-mono text-[10px] text-foreground">
+                          branding_config
+                        </code>{" "}
+                        table in the backend panel.
+                      </p>
                     </div>
                   </div>
                 </>

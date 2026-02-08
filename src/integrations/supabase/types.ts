@@ -14,7 +14,69 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      branding_config: {
+        Row: {
+          created_at: string
+          id: string
+          logo_url: string
+          site_name: string
+          tagline: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          logo_url?: string
+          site_name?: string
+          tagline?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          logo_url?: string
+          site_name?: string
+          tagline?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      vps_nodes: {
+        Row: {
+          created_at: string
+          id: string
+          ip: string
+          label: string
+          model: string
+          persona: string
+          port: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id: string
+          ip?: string
+          label: string
+          model: string
+          persona: string
+          port?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          ip?: string
+          label?: string
+          model?: string
+          persona?: string
+          port?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
