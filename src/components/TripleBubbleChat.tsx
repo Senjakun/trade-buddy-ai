@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useOllamaAnalysis, PersonaResponse } from "@/hooks/useOllamaAnalysis";
 import PersonaBubble from "@/components/chat/PersonaBubble";
-import SignalBadge from "@/components/chat/SignalBadge";
+import FinalDecision from "@/components/chat/FinalDecision";
 
 interface ChatMessage {
   id: string;
@@ -185,7 +185,12 @@ const TripleBubbleChat = () => {
                   ))}
                 </Tabs>
 
-                {msg.unifiedSignal && <SignalBadge signal={msg.unifiedSignal} />}
+                {msg.unifiedSignal && (
+                  <FinalDecision
+                    signal={msg.unifiedSignal}
+                    responses={msg.responses || []}
+                  />
+                )}
               </div>
             )}
           </div>
