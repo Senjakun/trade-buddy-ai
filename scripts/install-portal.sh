@@ -152,8 +152,11 @@ chmod +x "$UPDATE_SCRIPT"
 if [ -n "$DOMAIN" ]; then
   echo -e "${GREEN}📦 Step 8: Setup SSL (Let's Encrypt)...${NC}"
   apt install -y certbot python3-certbot-nginx
-  certbot --nginx -d "$DOMAIN" --non-interactive --agree-tos --email admin@${DOMAIN} || {
-    echo -e "${YELLOW}⚠️  SSL gagal, bisa jalankan manual: certbot --nginx -d ${DOMAIN}${NC}"
+  
+  # Setup SSL untuk domain utama + www
+  certbot --nginx -d "$DOMAIN" -d "www.${DOMAIN}" --non-interactive --agree-tos --email admin@${DOMAIN} || {
+    echo -e "${YELLOW}⚠️  SSL otomatis gagal, coba jalankan manual:${NC}"
+    echo -e "${CYAN}  sudo certbot --nginx -d ${DOMAIN} -d www.${DOMAIN}${NC}"
   }
 fi
 
