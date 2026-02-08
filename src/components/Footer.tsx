@@ -1,26 +1,32 @@
 import { Brain } from "lucide-react";
+import { useBranding } from "@/contexts/BrandingContext";
 
 const Footer = () => {
+  const { branding } = useBranding();
+
   return (
-    <footer className="border-t border-border bg-card/30">
-      <div className="mx-auto max-w-7xl px-6 py-12">
-        <div className="flex flex-col items-center justify-between gap-6 sm:flex-row">
+    <footer className="border-t border-border/30 bg-card/20">
+      <div className="mx-auto max-w-7xl px-4 py-8">
+        <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
           <div className="flex items-center gap-2">
-            <div className="rounded-lg bg-primary/10 p-1.5">
-              <Brain className="h-4 w-4 text-primary" />
-            </div>
-            <span className="text-lg font-bold text-foreground">
-              AI<span className="text-primary">Trade</span>
+            {branding.logoUrl ? (
+              <img src={branding.logoUrl} alt={branding.siteName} className="h-5 w-5 object-contain" />
+            ) : (
+              <div className="rounded-lg bg-primary/10 p-1">
+                <Brain className="h-3.5 w-3.5 text-primary" />
+              </div>
+            )}
+            <span className="font-display text-sm font-bold text-foreground">
+              {branding.siteName}
             </span>
           </div>
-          <div className="flex gap-6 text-sm text-muted-foreground">
+          <div className="flex gap-6 text-xs text-muted-foreground">
             <a href="#" className="transition-colors hover:text-foreground">Terms</a>
             <a href="#" className="transition-colors hover:text-foreground">Privacy</a>
             <a href="#" className="transition-colors hover:text-foreground">Docs</a>
-            <a href="#" className="transition-colors hover:text-foreground">Support</a>
           </div>
-          <p className="text-xs text-muted-foreground">
-            © 2026 AITrade. All rights reserved.
+          <p className="text-[10px] text-muted-foreground">
+            © 2026 {branding.siteName}. All rights reserved.
           </p>
         </div>
       </div>
