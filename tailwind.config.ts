@@ -15,7 +15,7 @@ export default {
     extend: {
       fontFamily: {
         sans: ["Inter", "system-ui", "sans-serif"],
-        display: ["Inter", "system-ui", "sans-serif"],
+        display: ["Space Grotesk", "Inter", "system-ui", "sans-serif"],
         mono: ["JetBrains Mono", "monospace"],
       },
       colors: {
@@ -59,6 +59,30 @@ export default {
         warning: {
           DEFAULT: "hsl(var(--warning))",
           foreground: "hsl(var(--warning-foreground))",
+        },
+        buy: {
+          DEFAULT: "hsl(var(--buy))",
+          foreground: "hsl(var(--buy-foreground))",
+        },
+        sell: {
+          DEFAULT: "hsl(var(--sell))",
+          foreground: "hsl(var(--sell-foreground))",
+        },
+        hold: {
+          DEFAULT: "hsl(var(--hold))",
+          foreground: "hsl(var(--hold-foreground))",
+        },
+        analyst: {
+          DEFAULT: "hsl(var(--analyst))",
+          foreground: "hsl(var(--analyst-foreground))",
+        },
+        risk: {
+          DEFAULT: "hsl(var(--risk))",
+          foreground: "hsl(var(--risk-foreground))",
+        },
+        strategist: {
+          DEFAULT: "hsl(var(--strategist))",
+          foreground: "hsl(var(--strategist-foreground))",
         },
         chart: {
           up: "hsl(var(--chart-up))",
